@@ -1,12 +1,10 @@
 'xargs' is the most difficult part that I cost almost 4 days for searching so much reference, some are more complicated that implemented this function with some UNIX's features, others uses `pointer to pointer` for reading from standard input. I almost lost in it. Luckily, I find an easy code for this function with comment in details and without `pointer to pointer`.
 Here, I put some refference for this function. They are good materias to know `string` and `pointer` .
-```
 https://www.howtogeek.com/435903/what-are-stdin-stdout-and-stderr-on-linux/
 https://clownote.github.io/2021/02/24/xv6/Xv6-Lab-Utilities/#xargs
 https://www.cnblogs.com/weijunji/p/XV6-study-01.html
 https://blog.csdn.net/Valishment/article/details/125357588
 https://blog.csdn.net/weixin_48283247/article/details/120602005
-```
 ------------------------------28/12/2022-----------------------------------
 This is a self monolog from a MSc. student in CUHK.
 My name is DING Cong, and this is my first time to learn OS.
