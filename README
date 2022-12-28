@@ -5,6 +5,7 @@ https://clownote.github.io/2021/02/24/xv6/Xv6-Lab-Utilities/#xargs
 https://www.cnblogs.com/weijunji/p/XV6-study-01.html
 https://blog.csdn.net/Valishment/article/details/125357588
 https://blog.csdn.net/weixin_48283247/article/details/120602005
+Use `git status` to list all new or modified files that haven't yet been committed.
 ------------------------------28/12/2022-----------------------------------
 This is a self monolog from a MSc. student in CUHK.
 My name is DING Cong, and this is my first time to learn OS.
