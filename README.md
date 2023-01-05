@@ -253,3 +253,6 @@ free memory = 133128192
 num of process = 3
 sysinfotest: OK
 ```
+note for review:
+lab1 tells user programm
+lab2 tells kernel, there's some relation between them, try to compare.
