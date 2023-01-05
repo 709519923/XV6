@@ -118,6 +118,8 @@ void testproc() {
       printf("sysinfotest: FAIL nproc is %d instead of %d\n", info.nproc, nproc);
       exit(1);
   }
+  printf("free memory = %d\n", info.freemem);
+  printf("num of process = %d\n", info.nproc);
 }
 
 int

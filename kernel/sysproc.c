@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -94,4 +95,34 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+
+// for sys_trace definition
+uint64
+sys_trace(void)
+{
+  int mask;
+  if(argint(0,&mask) < 0){  // transfer 'char' to 'int'
+    return -1;
+  }
+  struct proc *p = myproc();
+  p->mask = mask;
+  return 0;
+}
+
+// give system information: free memory & process
+// info_pointer is a user virtual address, pointing to a struct sysinfo.
+uint64
+sys_sysinfo(void)
+{
+  uint64 info_pointer;
+  struct proc *p = myproc();
+  struct sysinfo info;
+  info.freemem = freemem();
+  info.nproc = nproc();
+  argaddr(0, &info_pointer);
+  if(copyout(p->pagetable, info_pointer, (char *)&info, sizeof(info)) < 0)
+      return -1;
+  return 0;
 }
