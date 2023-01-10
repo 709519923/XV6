@@ -432,3 +432,58 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+
+// Recursively free page-table pages.
+// All leaf mappings must already have been removed.
+void
+vmprint(pagetable_t pagetable, int depth)
+{
+  char* buf = "";
+  switch (depth)
+  {
+  case 0:
+    printf("page table %p\n", pagetable);
+    buf = "..";
+    break;
+  case 1:
+    buf = ".. ..";
+    break;
+  case 2:
+    buf = ".. .. ..";
+    break;
+  }
+  // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      // ..0: pte 0x0000000021fda801 pa 0x0000000087f6a000
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+      printf("%s%d: pte %p pa %p\n", buf, i, pte, child);
+      if(depth != 2)
+      vmprint((pagetable_t)child, ++depth);
+    }
+  }
+}
+
+
+//check accessed page
+//return uint 32 mask for showing every page's condition of access
+uint32
+check_page(pagetable_t pagetable, uint64 start_va, int pg_amount)
+{
+  if(start_va >= MAXVA)
+    panic("walk");
+  uint32 mask = 0;
+  for(int i = 0; i < pg_amount; i++){
+    pte_t * pte = walk(pagetable, start_va + i * PGSIZE, 0);
+    if(*pte & PTE_A) {
+      printf("i = %d\t", i);
+      mask |= 1 << i;
+      printf("mask = %p\n", mask);
+      *pte &=  ~PTE_A; // 0 << 6 for bit clear
+    }
+  }
+  return mask;
+}

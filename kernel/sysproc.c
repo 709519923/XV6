@@ -81,6 +81,19 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  // use argaddr to get register's arguement
+  //  pgaccess(buf, 32, &abits)
+    uint64 buffer;
+    int pg_amount;
+    uint64 abits; // mask comparison
+    if(argaddr(0, &buffer) < 0) return -1;
+    if(argint(1, &pg_amount) < 0) return -1;
+    if(argaddr(2, &abits) < 0) return -1;
+    struct proc *p = myproc();
+    uint32 mask = check_page(p->pagetable, buffer, pg_amount);
+    if(copyout(p->pagetable, abits, (char*)&mask, sizeof(uint64)) < 0){
+      return -1;
+    }
   return 0;
 }
 #endif
