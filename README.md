@@ -2,7 +2,7 @@
 
 for reference:
 
-[http://xv6.dgs.zone/labs/answers/lab7.html] http://xv6.dgs.zone/labs/answers/lab7.html
+[http://xv6.dgs.zone/labs/answers/lab7.html]: http://xv6.dgs.zone/labs/answers/lab7.html
 
 ## Uthread: switching between threads
 
