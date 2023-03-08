@@ -27,7 +27,7 @@ void main(void) {
 
 
 ```
-[https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png](https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png)
+![https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png](https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png)
 1.a2
 2.No, they are inline in the `main()`
 3.0x30
@@ -38,7 +38,7 @@ void main(void) {
 $ call
 HE110 World$ 
 ```
-[https://img-blog.csdnimg.cn/8074ed66e74f4a03b46912c6c2724855.png](https://img-blog.csdnimg.cn/8074ed66e74f4a03b46912c6c2724855.png)
+![https://img-blog.csdnimg.cn/8074ed66e74f4a03b46912c6c2724855.png](https://img-blog.csdnimg.cn/8074ed66e74f4a03b46912c6c2724855.png)
 variable `i` need to be read in pair:
 $64$ $6C$ $72$ , they are corresponding to character in ACSII.
 
