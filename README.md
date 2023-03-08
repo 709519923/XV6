@@ -27,7 +27,7 @@ void main(void) {
 
 
 ```
-![在这里插入图片描述](https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png)
+[https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png](https://img-blog.csdnimg.cn/14b3356523ef4bffa25dfbfd78f2a2e1.png)
 1.a2
 2.No, they are inline in the `main()`
 3.0x30
