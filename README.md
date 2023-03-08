@@ -38,7 +38,7 @@ void main(void) {
 $ call
 HE110 World$ 
 ```
-![在这里插入图片描述](https://img-blog.csdnimg.cn/8074ed66e74f4a03b46912c6c2724855.png)
+[https://img-blog.csdnimg.cn/8074ed66e74f4a03b46912c6c2724855.png]
 variable `i` need to be read in pair:
 $64$ $6C$ $72$ , they are corresponding to character in ACSII.
 
