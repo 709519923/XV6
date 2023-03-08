@@ -1,0 +1,297 @@
+[1mdiff --git a/Makefile b/Makefile[m
+[1mindex 7a7e380..094ec9f 100644[m
+[1m--- a/Makefile[m
+[1m+++ b/Makefile[m
+[36m@@ -192,6 +192,7 @@[m [mUPROGS=\[m
+ [m
+ [m
+ [m
+[32m+[m
+ ifeq ($(LAB),$(filter $(LAB), lock))[m
+ UPROGS += \[m
+ 	$U/_stats[m
+[36m@@ -244,7 +245,8 @@[m [mendif[m
+ [m
+ ifeq ($(LAB),fs)[m
+ UPROGS += \[m
+[31m-	$U/_bigfile[m
+[32m+[m	[32m$U/_bigfile\[m
+[32m+[m	[32m$U/_symlinktest[m
+ endif[m
+ [m
+ [m
+[1mdiff --git a/kernel/fcntl.h b/kernel/fcntl.h[m
+[1mindex 44861b9..7b1a77c 100644[m
+[1m--- a/kernel/fcntl.h[m
+[1m+++ b/kernel/fcntl.h[m
+[36m@@ -3,3 +3,4 @@[m
+ #define O_RDWR    0x002[m
+ #define O_CREATE  0x200[m
+ #define O_TRUNC   0x400[m
+[32m+[m[32m#define O_NOFOLLOW   0x004[m
+[1mdiff --git a/kernel/file.h b/kernel/file.h[m
+[1mindex b076d1d..5c4eb3a 100644[m
+[1m--- a/kernel/file.h[m
+[1m+++ b/kernel/file.h[m
+[36m@@ -26,7 +26,7 @@[m [mstruct inode {[m
+   short minor;[m
+   short nlink;[m
+   uint size;[m
+[31m-  uint addrs[NDIRECT+1];[m
+[32m+[m[32m  uint addrs[NDIRECT+2];[m
+ };[m
+ [m
+ // map major device number to device functions.[m
+[1mdiff --git a/kernel/fs.c b/kernel/fs.c[m
+[1mindex 40c9bd4..842617e 100644[m
+[1m--- a/kernel/fs.c[m
+[1m+++ b/kernel/fs.c[m
+[36m@@ -401,6 +401,35 @@[m [mbmap(struct inode *ip, uint bn)[m
+     return addr;[m
+   }[m
+ [m
+[32m+[m[32m  bn -= NINDIRECT;[m
+[32m+[m
+[32m+[m[32m  if(bn < NDINDIRECT){[m
+[32m+[m[32m    // Load load double-indirect block, allocating if necessary.[m
+[32m+[m[32m    int level2_idx = bn / NADDR_PER_BLOCK;  // 要查找的块号位于二级间接块中的位置[m
+[32m+[m[32m    int level1_idx = bn % NADDR_PER_BLOCK;  // 要查找的块号位于一级间接块中的位置[m
+[32m+[m[32m    if((addr = ip->addrs[NDIRECT+1]) == 0)[m
+[32m+[m[32m      ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);[m
+[32m+[m[32m    bp = bread(ip->dev, addr);[m
+[32m+[m[32m    a = (uint*)bp->data;[m
+[32m+[m
+[32m+[m[32m    if((addr = a[level2_idx]) == 0){[m
+[32m+[m[32m      a[level2_idx] = addr = balloc(ip->dev);[m
+[32m+[m[32m      log_write(bp);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    brelse(bp);[m
+[32m+[m
+[32m+[m[32m    bp = bread(ip->dev, addr);[m
+[32m+[m[32m    a = (uint*)bp->data;[m
+[32m+[m
+[32m+[m[32m    if((addr = a[level1_idx]) == 0){[m
+[32m+[m[32m      a[level1_idx] = addr = balloc(ip->dev);[m
+[32m+[m[32m      log_write(bp);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    brelse(bp);[m
+[32m+[m
+[32m+[m[32m    return addr;[m
+[32m+[m[32m  }[m[41m  [m
+[32m+[m
+   panic("bmap: out of range");[m
+ }[m
+ [m
+[36m@@ -432,6 +461,30 @@[m [mitrunc(struct inode *ip)[m
+     ip->addrs[NDIRECT] = 0;[m
+   }[m
+ [m
+[32m+[m[32m  struct buf* bp1;[m
+[32m+[m[32m  uint* a1;[m
+[32m+[m[32m  if(ip->addrs[NDIRECT + 1]) {[m
+[32m+[m[32m    bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);[m
+[32m+[m[32m    a = (uint*)bp->data;[m
+[32m+[m[32m    for(i = 0; i < NADDR_PER_BLOCK; i++) {[m
+[32m+[m[32m      // 每个一级间接块的操作都类似于上面的[m
+[32m+[m[32m      // if(ip->addrs[NDIRECT])中的内容[m
+[32m+[m[32m      if(a[i]) {[m
+[32m+[m[32m        bp1 = bread(ip->dev, a[i]);[m
+[32m+[m[32m        a1 = (uint*)bp1->data;[m
+[32m+[m[32m        for(j = 0; j < NADDR_PER_BLOCK; j++) {[m
+[32m+[m[32m          if(a1[j])[m
+[32m+[m[32m            bfree(ip->dev, a1[j]);[m
+[32m+[m[32m        }[m
+[32m+[m[32m        brelse(bp1);[m
+[32m+[m[32m        bfree(ip->dev, a[i]);[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m    brelse(bp);[m
+[32m+[m[32m    bfree(ip->dev, ip->addrs[NDIRECT + 1]);[m
+[32m+[m[32m    ip->addrs[NDIRECT + 1] = 0;[m
+[32m+[m[32m  }[m
+[32m+[m
+   ip->size = 0;[m
+   iupdate(ip);[m
+ }[m
+[1mdiff --git a/kernel/fs.h b/kernel/fs.h[m
+[1mindex 139dcc9..eb08e4a 100644[m
+[1m--- a/kernel/fs.h[m
+[1m+++ b/kernel/fs.h[m
+[36m@@ -5,6 +5,7 @@[m
+ #define ROOTINO  1   // root i-number[m
+ #define BSIZE 1024  // block size[m
+ [m
+[32m+[m
+ // Disk layout:[m
+ // [ boot block | super block | log | inode blocks |[m
+ //                                          free bit map | data blocks][m
+[36m@@ -24,9 +25,13 @@[m [mstruct superblock {[m
+ [m
+ #define FSMAGIC 0x10203040[m
+ [m
+[31m-#define NDIRECT 12[m
+[32m+[m
+[32m+[m
+[32m+[m[32m#define NDIRECT 11[m
+ #define NINDIRECT (BSIZE / sizeof(uint))[m
+[31m-#define MAXFILE (NDIRECT + NINDIRECT)[m
+[32m+[m[32m#define NDINDIRECT ((BSIZE / sizeof(uint)) * (BSIZE / sizeof(uint)))[m
+[32m+[m[32m#define MAXFILE (NDIRECT + NINDIRECT + NDINDIRECT)[m
+[32m+[m[32m#define NADDR_PER_BLOCK (BSIZE / sizeof(uint))  // 一个块中的地址数量[m
+ [m
+ // On-disk inode structure[m
+ struct dinode {[m
+[36m@@ -35,7 +40,7 @@[m [mstruct dinode {[m
+   short minor;          // Minor device number (T_DEVICE only)[m
+   short nlink;          // Number of links to inode in file system[m
+   uint size;            // Size of file (bytes)[m
+[31m-  uint addrs[NDIRECT+1];   // Data block addresses[m
+[32m+[m[32m  uint addrs[NDIRECT+2];   // Data block addresses[m
+ };[m
+ [m
+ // Inodes per block.[m
+[1mdiff --git a/kernel/stat.h b/kernel/stat.h[m
+[1mindex 19543af..6dc12d2 100644[m
+[1m--- a/kernel/stat.h[m
+[1m+++ b/kernel/stat.h[m
+[36m@@ -1,6 +1,8 @@[m
+ #define T_DIR     1   // Directory[m
+ #define T_FILE    2   // File[m
+ #define T_DEVICE  3   // Device[m
+[32m+[m[32m#define T_SYMLINK 4   // link[m
+[32m+[m
+ [m
+ struct stat {[m
+   int dev;     // File system's disk device[m
+[1mdiff --git a/kernel/syscall.c b/kernel/syscall.c[m
+[1mindex c1b3670..1697b62 100644[m
+[1m--- a/kernel/syscall.c[m
+[1m+++ b/kernel/syscall.c[m
+[36m@@ -104,6 +104,7 @@[m [mextern uint64 sys_unlink(void);[m
+ extern uint64 sys_wait(void);[m
+ extern uint64 sys_write(void);[m
+ extern uint64 sys_uptime(void);[m
+[32m+[m[32mextern uint64 sys_symlink(void);[m
+ [m
+ static uint64 (*syscalls[])(void) = {[m
+ [SYS_fork]    sys_fork,[m
+[36m@@ -127,6 +128,7 @@[m [mstatic uint64 (*syscalls[])(void) = {[m
+ [SYS_link]    sys_link,[m
+ [SYS_mkdir]   sys_mkdir,[m
+ [SYS_close]   sys_close,[m
+[32m+[m[32m[SYS_symlink] sys_symlink,[m
+ };[m
+ [m
+ void[m
+[1mdiff --git a/kernel/syscall.h b/kernel/syscall.h[m
+[1mindex bc5f356..97e4b87 100644[m
+[1m--- a/kernel/syscall.h[m
+[1m+++ b/kernel/syscall.h[m
+[36m@@ -20,3 +20,4 @@[m
+ #define SYS_link   19[m
+ #define SYS_mkdir  20[m
+ #define SYS_close  21[m
+[32m+[m[32m#define SYS_symlink  22[m
+[1mdiff --git a/kernel/sysfile.c b/kernel/sysfile.c[m
+[1mindex 5dc453b..af5bc4a 100644[m
+[1m--- a/kernel/sysfile.c[m
+[1m+++ b/kernel/sysfile.c[m
+[36m@@ -3,7 +3,7 @@[m
+ // Mostly argument checking, since we don't trust[m
+ // user code, and calls into file.c and fs.c.[m
+ //[m
+[31m-[m
+[32m+[m[32m#define MAX_SYMLINK_DEPTH 10[m
+ #include "types.h"[m
+ #include "riscv.h"[m
+ #include "defs.h"[m
+[36m@@ -322,6 +322,36 @@[m [msys_open(void)[m
+     return -1;[m
+   }[m
+ [m
+[32m+[m[32m  // 处理符号链接[m
+[32m+[m[32m  if(ip->type == T_SYMLINK && !(omode & O_NOFOLLOW)) {[m
+[32m+[m[32m    // 若符号链接指向的仍然是符号链接，则递归的跟随它[m
+[32m+[m[32m    // 直到找到真正指向的文件[m
+[32m+[m[32m    // 但深度不能超过MAX_SYMLINK_DEPTH[m
+[32m+[m[32m    for(int i = 0; i < MAX_SYMLINK_DEPTH; ++i) {[m
+[32m+[m[32m      // 读出符号链接指向的路径[m
+[32m+[m[32m      if(readi(ip, 0, (uint64)path, 0, MAXPATH) != MAXPATH) {[m
+[32m+[m[32m        iunlockput(ip);[m
+[32m+[m[32m        end_op();[m
+[32m+[m[32m        return -1;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      iunlockput(ip);[m
+[32m+[m[32m      ip = namei(path);[m
+[32m+[m[32m      if(ip == 0) {[m
+[32m+[m[32m        end_op();[m
+[32m+[m[32m        return -1;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      ilock(ip);[m
+[32m+[m[32m      if(ip->type != T_SYMLINK)[m
+[32m+[m[32m        break;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    // 超过最大允许深度后仍然为符号链接，则返回错误[m
+[32m+[m[32m    if(ip->type == T_SYMLINK) {[m
+[32m+[m[32m      iunlockput(ip);[m
+[32m+[m[32m      end_op();[m
+[32m+[m[32m      return -1;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){[m
+     if(f)[m
+       fileclose(f);[m
+[36m@@ -484,3 +514,31 @@[m [msys_pipe(void)[m
+   }[m
+   return 0;[m
+ }[m
+[32m+[m
+[32m+[m[32muint64[m
+[32m+[m[32msys_symlink(void) {[m
+[32m+[m[32m  char target[MAXPATH], path[MAXPATH];[m
+[32m+[m[32m  struct inode* ip_path;[m
+[32m+[m
+[32m+[m[32m  if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0) {[m
+[32m+[m[32m    return -1;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  begin_op();[m
+[32m+[m[32m  // 分配一个inode结点，create返回锁定的inode[m
+[32m+[m[32m  ip_path = create(path, T_SYMLINK, 0, 0);[m
+[32m+[m[32m  if(ip_path == 0) {[m
+[32m+[m[32m    end_op();[m
+[32m+[m[32m    return -1;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // 向inode数据块中写入target路径[m
+[32m+[m[32m  if(writei(ip_path, 0, (uint64)target, 0, MAXPATH) < MAXPATH) {[m
+[32m+[m[32m    iunlockput(ip_path);[m
+[32m+[m[32m    end_op();[m
+[32m+[m[32m    return -1;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  iunlockput(ip_path);[m
+[32m+[m[32m  end_op();[m
+[32m+[m[32m  return 0;[m
+[32m+[m[32m}[m
+[1mdiff --git a/user/user.h b/user/user.h[m
+[1mindex b71ecda..446b52a 100644[m
+[1m--- a/user/user.h[m
+[1m+++ b/user/user.h[m
+[36m@@ -23,6 +23,7 @@[m [mint getpid(void);[m
+ char* sbrk(int);[m
+ int sleep(int);[m
+ int uptime(void);[m
+[32m+[m[32mint symlink(char *target, char *path);[m
+ [m
+ // ulib.c[m
+ int stat(const char*, struct stat*);[m
+[1mdiff --git a/user/usys.pl b/user/usys.pl[m
+[1mindex 01e426e..bc5c22e 100755[m
+[1m--- a/user/usys.pl[m
+[1m+++ b/user/usys.pl[m
+[36m@@ -36,3 +36,4 @@[m [mentry("getpid");[m
+ entry("sbrk");[m
+ entry("sleep");[m
+ entry("uptime");[m
+[32m+[m[32mentry("symlink");[m
