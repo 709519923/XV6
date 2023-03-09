@@ -176,7 +176,7 @@ last experiment is about allocating a **4kb page** of physical memory(**RAM**) f
 
 processes contend for `bcache.lock`frequently, when call `bget` and `brelse` 
 
-![image-20230307220308797](C:\Users\a\AppData\Roaming\Typora\typora-user-images\image-20230307220308797.png)
+![image-20230307220308797](./image-20230307220308797.png)
 
 - how to preload the heat blocks?
 
