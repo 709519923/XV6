@@ -88,7 +88,7 @@ syscall(void)
 
 **- kernel/user stack:**  棧被存儲在page table的某一個page裏面，其記錄了匯編代碼運行的過程中，需要的一些**變量的值（local variable）**以及**函數完成之後需要返回的地址**(return address), PC會通過一個stack pointer寄存器的，逐個地獲取stack裏面的内容，結構如下：
 
-![image-20230309004856885](C:\Users\a\AppData\Roaming\Typora\typora-user-images\image-20230309004856885.png)
+![image-20230309004856885](.\image-20230309004856885.png)
 
 儅執行到return時，stack pointer會跳到上一個函數所對應的地址，這些内容也跟著銷毀，周而復始直至所有的内容的出棧。
 
