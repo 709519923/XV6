@@ -139,7 +139,7 @@ memmove(p->trapframe, p->alarm_saved_tf, sizeof(p->alarm_saved_tf));
 
 進程之間的切換如下圖，走了一大轉~~可謂十分困難
 
-![image-20230309194619538](C:\Users\a\AppData\Roaming\Typora\typora-user-images\image-20230309194619538.png)
+![image-20230309194619538](.\image-20230309194619538.png)
 
 - 以下很好地解釋了進程和綫程的概念
 
